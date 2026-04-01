@@ -228,8 +228,8 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("**💡 Preguntas de ejemplo**")
 
-    for ej in EJEMPLOS.get(dim, []):
-        if st.button(ej, key=f"ej_{ej[:20]}", use_container_width=True):
+    for idx, ej in enumerate(EJEMPLOS.get(dim, [])):
+        if st.button(ej, key=f"ej_{dim}_{idx}", use_container_width=True):
             st.session_state["pregunta_rapida"] = ej
 
     st.markdown("---")
