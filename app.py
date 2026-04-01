@@ -6,6 +6,7 @@ st.set_page_config(
     page_title="Red de Observatorios – Boyacá",
     page_icon="🏛️",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
 
 # ── Logo en base64 ────────────────────────────────────────────────────────────
