@@ -25,7 +25,7 @@ def get_client():
     return _client
 
 
-def buscar_chunks(pregunta: str, top_k: int = 25, dimension: str = None) -> list[dict]:
+def buscar_chunks(pregunta: str, top_k: int = 50, dimension: str = None) -> list[dict]:
     embedding = get_model().encode(pregunta).tolist()
     embedding_str = "[" + ",".join(str(x) for x in embedding) + "]"
 
@@ -116,7 +116,7 @@ def responder(pregunta: str, dimension: str = None) -> dict:
     prompt  = construir_prompt(pregunta, chunks)
     mensaje = get_client().messages.create(
         model      = "claude-haiku-4-5",
-        max_tokens = 1024,
+        max_tokens = 2000,
         messages   = [{"role": "user", "content": prompt}],
     )
 
