@@ -48,34 +48,43 @@ with st.sidebar:
     st.markdown("### 💡 Preguntas de ejemplo")
 
     ejemplos_por_dimension = {
-        "Económica": [
-            "¿Cuál fue el PIB de Boyacá en 2024?",
-            "¿Cuánto creció el PIB entre 2023 y 2024?",
-            "¿Qué sector aporta más al PIB de Boyacá?",
-            "¿Cómo evolucionó la agricultura entre 2010 y 2024?",
-            "¿Cuál fue el impacto del COVID en el PIB de Boyacá?",
-            "¿Cuánto aporta la construcción al PIB?",
-            "¿Qué actividad económica creció más en 2024?",
-        ],
-        "Salud": [
-            "¿Cuántas personas están afiliadas al SGSSS en Boyacá?",
-            "¿Cuál es la tasa de mortalidad materna en Boyacá?",
-            "¿Qué municipio tiene más casos de dengue?",
-            "¿Cuántos nacidos vivos hubo en 2025?",
-            "¿Cómo está la cobertura de vacunación BCG en Boyacá?",
-            "¿Cuántos casos de tuberculosis se registraron?",
-            "¿Cuál es la situación del embarazo en adolescentes?",
-        ],
-        "Todas": [
-            "¿Cuál fue el PIB de Boyacá en 2024?",
-            "¿Cuántas personas están afiliadas al SGSSS en Boyacá?",
-            "¿Qué sector aporta más al PIB de Boyacá?",
-            "¿Cuál es la tasa de mortalidad materna en Boyacá?",
-            "¿Cuál fue el impacto del COVID en el PIB de Boyacá?",
-            "¿Qué municipio tiene más casos de dengue?",
-            "¿Cómo evolucionó la agricultura entre 2010 y 2024?",
-            "¿Cuántos casos de tuberculosis se registraron?",
-        ],
+    "Económica": [
+        "¿Cuál fue el PIB de Boyacá en 2024?",
+        "¿Cuánto creció el PIB entre 2023 y 2024?",
+        "¿Qué sector aporta más al PIB de Boyacá?",
+        "¿Cómo evolucionó la agricultura entre 2010 y 2024?",
+        "¿Cuál fue el impacto del COVID en el PIB de Boyacá?",
+        "¿Cuánto aporta la construcción al PIB?",
+        "¿Qué actividad económica creció más en 2024?",
+    ],
+    "Salud": [
+        "¿Cuántas personas están afiliadas al SGSSS en Boyacá?",
+        "¿Cuál es la tasa de mortalidad materna en Boyacá?",
+        "¿Qué municipio tiene más casos de dengue?",
+        "¿Cuántos nacidos vivos hubo en 2025?",
+        "¿Cómo está la cobertura de vacunación BCG en Boyacá?",
+        "¿Cuántos casos de tuberculosis se registraron?",
+        "¿Cuál es la situación del embarazo en adolescentes?",
+    ],
+    "Violencia": [
+        "¿Cuántos feminicidios se registraron en Boyacá en 2025?",
+        "¿Qué municipio tiene más casos de violencia de género?",
+        "¿Cuántos intentos de suicidio hubo en Boyacá?",
+        "¿Cuál es la principal causa de lesiones fatales en Boyacá?",
+        "¿Cuántos casos de violencia sexual se reportaron?",
+        "¿Qué municipios registraron violencia en entornos educativos?",
+        "¿Cuántos casos de conflicto armado se reportaron en 2025?",
+    ],
+    "Todas": [
+        "¿Cuál fue el PIB de Boyacá en 2024?",
+        "¿Cuántos feminicidios se registraron en Boyacá en 2025?",
+        "¿Cuántas personas están afiliadas al SGSSS en Boyacá?",
+        "¿Cuál es la principal causa de lesiones fatales en Boyacá?",
+        "¿Cuál fue el impacto del COVID en el PIB de Boyacá?",
+        "¿Qué municipio tiene más casos de violencia de género?",
+        "¿Qué municipio tiene más casos de dengue?",
+        "¿Cuántos intentos de suicidio hubo en Boyacá?",
+    ],
     }
 
     ejemplos = ejemplos_por_dimension.get(dimension, ejemplos_por_dimension["Todas"])
