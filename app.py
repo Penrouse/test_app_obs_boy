@@ -47,10 +47,10 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("### 💡 Preguntas de ejemplo")
     ejemplos = [
-        "¿Cuál fue el PIB de Boyacá en 2023?",
-        "¿Cuánto creció el PIB entre 2022 y 2023?",
+        "¿Cuál fue el PIB de Boyacá en 2024?",
+        "¿Cuánto creció el PIB entre 2023 y 2024?",
         "¿Qué sector aporta más al PIB de Boyacá?",
-        "¿Cómo evolucionó la agricultura entre 2010 y 2023?",
+        "¿Cómo evolucionó la agricultura entre 2010 y 2024?",
         "¿Cuál fue el impacto del COVID en el PIB de Boyacá?",
     ]
     for ejemplo in ejemplos:
