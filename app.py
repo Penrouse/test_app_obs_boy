@@ -46,13 +46,39 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("### 💡 Preguntas de ejemplo")
-    ejemplos = [
-        "¿Cuál fue el PIB de Boyacá en 2024?",
-        "¿Cuánto creció el PIB entre 2023 y 2024?",
-        "¿Qué sector aporta más al PIB de Boyacá?",
-        "¿Cómo evolucionó la agricultura entre 2010 y 2024?",
-        "¿Cuál fue el impacto del COVID en el PIB de Boyacá?",
-    ]
+
+    ejemplos_por_dimension = {
+        "Económica": [
+            "¿Cuál fue el PIB de Boyacá en 2024?",
+            "¿Cuánto creció el PIB entre 2023 y 2024?",
+            "¿Qué sector aporta más al PIB de Boyacá?",
+            "¿Cómo evolucionó la agricultura entre 2010 y 2024?",
+            "¿Cuál fue el impacto del COVID en el PIB de Boyacá?",
+            "¿Cuánto aporta la construcción al PIB?",
+            "¿Qué actividad económica creció más en 2024?",
+        ],
+        "Salud": [
+            "¿Cuántas personas están afiliadas al SGSSS en Boyacá?",
+            "¿Cuál es la tasa de mortalidad materna en Boyacá?",
+            "¿Qué municipio tiene más casos de dengue?",
+            "¿Cuántos nacidos vivos hubo en 2025?",
+            "¿Cómo está la cobertura de vacunación BCG en Boyacá?",
+            "¿Cuántos casos de tuberculosis se registraron?",
+            "¿Cuál es la situación del embarazo en adolescentes?",
+        ],
+        "Todas": [
+            "¿Cuál fue el PIB de Boyacá en 2024?",
+            "¿Cuántas personas están afiliadas al SGSSS en Boyacá?",
+            "¿Qué sector aporta más al PIB de Boyacá?",
+            "¿Cuál es la tasa de mortalidad materna en Boyacá?",
+            "¿Cuál fue el impacto del COVID en el PIB de Boyacá?",
+            "¿Qué municipio tiene más casos de dengue?",
+            "¿Cómo evolucionó la agricultura entre 2010 y 2024?",
+            "¿Cuántos casos de tuberculosis se registraron?",
+        ],
+    }
+
+    ejemplos = ejemplos_por_dimension.get(dimension, ejemplos_por_dimension["Todas"])
     for ejemplo in ejemplos:
         if st.button(ejemplo, use_container_width=True):
             st.session_state["pregunta_rapida"] = ejemplo
