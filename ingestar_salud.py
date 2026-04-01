@@ -13,14 +13,13 @@ DIMENSION  = "Salud"
 FUENTE_DEF = "Secretaría de Salud de Boyacá – Observatorio"
 BATCH_SIZE = 100
 
-# Rutas de archivos
-AFILIADOS_PATH = "data/BD_SALUD_AFILIADOS_SSS_2025_cleaned.xlsx"
-MATRIZ_PATH    = "data/MATRIZ_SALUD_2025-2_cleaned.xlsx"
+ARCHIVOS = [
+    "data/BD SALUD AFILIADOS SSS 2025 cleaned.xlsx",
+    "data/MATRIZ SALUD 2025-2 cleaned.xlsx",
+]
 
-# Sheets a omitir en la matriz (no son indicadores)
 SHEETS_OMITIR = {"DATOS V2", "INDICE"}
 
-# Columnas que NO son el valor del indicador
 COLS_NO_VALOR = {
     "MES", "AÑO", "MUNICIPIO RESIDENCIA", "MUNICIPIO RESIDENCIA ",
     "CÓDIGO MUNICIPIO", "CÓDIGO MUNICIPIO.1", "MUNICIPIO", "MUNICIPIO.1",
@@ -35,45 +34,34 @@ COLS_NO_VALOR = {
     "Unnamed: 15", "Unnamed: 16", "Unnamed: 17",
 }
 
-# Columnas de etnia a omitir
-COLS_ETNIA = {c for c in [] if "ETNIA" in str(c)}
-
 print("Cargando modelo de embeddings...")
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
 chunks_totales = []
 
 # ══════════════════════════════════════════════════════════════════════════════
-# PARTE 1 — Personas afiliadas al SGSSS (agregar por municipio + año + género)
+# PARTE ESPECIAL — Afiliados SGSSS (requiere agregación por volumen)
 # ══════════════════════════════════════════════════════════════════════════════
-print("\n── Procesando afiliados SGSSS...")
-df_af = pd.read_excel(AFILIADOS_PATH, sheet_name="PERSONAS AFILIADAS AL SGSSS")
+print("\n── Procesando afiliados SGSSS (agregando 208K filas)...")
+df_af = pd.read_excel(ARCHIVOS[0], sheet_name="PERSONAS AFILIADAS AL SGSSS")
 df_af.columns = df_af.columns.str.strip()
 
-# Agrupar: total afiliados por municipio, año y género
 agg = (
     df_af.groupby(["ANIO", "MUNICIPIO", "NOMBRE_MUNICIPIO_DANE", "GENERO"])
-    ["PERSONAS_AFILIADAS"]
-    .sum()
-    .reset_index()
+    ["PERSONAS_AFILIADAS"].sum().reset_index()
 )
-
-# También calcular total por municipio y año (sin distinción de género)
 agg_total = (
     df_af.groupby(["ANIO", "MUNICIPIO", "NOMBRE_MUNICIPIO_DANE"])
-    ["PERSONAS_AFILIADAS"]
-    .sum()
-    .reset_index()
+    ["PERSONAS_AFILIADAS"].sum().reset_index()
 )
 agg_total["GENERO"] = "TOTAL"
-
 df_aff = pd.concat([agg, agg_total], ignore_index=True)
 
 for _, row in df_aff.iterrows():
-    municipio = str(row["NOMBRE_MUNICIPIO_DANE"]).strip().title()
-    genero    = str(row["GENERO"]).strip().capitalize()
-    anio      = int(row["ANIO"])
-    valor     = float(row["PERSONAS_AFILIADAS"])
+    municipio  = str(row["NOMBRE_MUNICIPIO_DANE"]).strip().title()
+    genero     = str(row["GENERO"]).strip().capitalize()
+    anio       = int(row["ANIO"])
+    valor      = float(row["PERSONAS_AFILIADAS"])
     genero_txt = f"de género {genero}" if genero != "Total" else "en total (ambos géneros)"
 
     texto = (
@@ -83,99 +71,116 @@ for _, row in df_aff.iterrows():
         f"Fuente: {FUENTE_DEF}."
     )
     chunks_totales.append({
-        "texto":      texto,
-        "anio":       anio,
-        "municipio":  municipio,
-        "indicador":  "Personas afiliadas al SGSSS",
-        "valor":      valor,
-        "fuente":     FUENTE_DEF,
+        "texto":     texto,
+        "anio":      anio,
+        "municipio": municipio,
+        "indicador": "Personas afiliadas al SGSSS",
+        "valor":     valor,
+        "fuente":    FUENTE_DEF,
     })
 
-print(f"  Chunks generados: {len(chunks_totales)}")
+print(f"  Chunks afiliados generados: {len(chunks_totales)}")
 
 # ══════════════════════════════════════════════════════════════════════════════
-# PARTE 2 — Indicadores de la matriz de salud (una sheet por indicador)
+# PARTE PRINCIPAL — Todas las sheets de indicadores de ambos archivos
 # ══════════════════════════════════════════════════════════════════════════════
-print("\n── Procesando matriz de salud...")
-xf = pd.ExcelFile(MATRIZ_PATH)
-sheets = [s for s in xf.sheet_names if s not in SHEETS_OMITIR]
+def procesar_sheets(ruta_archivo):
+    xf     = pd.ExcelFile(ruta_archivo)
+    sheets = [
+        s for s in xf.sheet_names
+        if s not in SHEETS_OMITIR and s != "PERSONAS AFILIADAS AL SGSSS"
+    ]
+    nombre_archivo = ruta_archivo.split("/")[-1]
+    print(f"\n── {nombre_archivo} → {len(sheets)} sheets de indicadores")
 
-for sheet in sheets:
-    df = pd.read_excel(xf, sheet_name=sheet)
-    df.columns = df.columns.str.strip()
-    df = df.dropna(how="all")
+    chunks = []
+    for sheet in sheets:
+        df = pd.read_excel(xf, sheet_name=sheet)
+        df.columns = df.columns.str.strip()
+        df = df.dropna(how="all")
 
-    if df.empty:
-        print(f"  Omitida (vacía): {sheet}")
-        continue
-
-    # Identificar columna de valor (numérica, no en la lista de exclusión)
-    col_valor = None
-    for col in df.columns:
-        if col in COLS_NO_VALOR or "ETNIA" in str(col):
-            continue
-        if pd.api.types.is_numeric_dtype(df[col]) or df[col].dropna().apply(
-            lambda x: str(x).replace(".", "").replace(",", "").strip().isdigit()
-        ).any():
-            col_valor = col
-            break
-
-    if not col_valor:
-        print(f"  Omitida (sin columna de valor): {sheet}")
-        continue
-
-    # Nombre del indicador = nombre de la columna de valor, limpio
-    nombre_indicador = col_valor.replace("\n", " ").strip()
-
-    # Columna de municipio
-    col_municipio = next(
-        (c for c in ["MUNICIPIO", "MUNICIPIO RESIDENCIA", "MUNICIPIO RESIDENCIA "]
-         if c in df.columns), None
-    )
-    col_anio = next((c for c in ["AÑO", "ANIO"] if c in df.columns), None)
-    col_mes  = "MES" if "MES" in df.columns else None
-    col_fuente = "FUENTE DE LA INFORMACION" if "FUENTE DE LA INFORMACION" in df.columns else None
-
-    for _, row in df.iterrows():
-        try:
-            valor = float(str(row[col_valor]).replace(",", ".").strip())
-        except (ValueError, KeyError):
+        if df.empty:
+            print(f"  Omitida (vacía): {sheet}")
             continue
 
-        municipio = str(row[col_municipio]).strip().title() if col_municipio else "Boyacá"
-        anio      = int(row[col_anio]) if col_anio and pd.notna(row[col_anio]) else 2025
-        mes       = str(row[col_mes]).strip().capitalize() if col_mes and pd.notna(row.get(col_mes)) else ""
-        fuente    = str(row[col_fuente]).strip() if col_fuente and pd.notna(row.get(col_fuente)) else FUENTE_DEF
-        periodo   = f"en {mes} de {anio}" if mes and mes.lower() != "nan" else f"en {anio}"
+        # Detectar columna de valor numérico
+        col_valor = None
+        for col in df.columns:
+            if col in COLS_NO_VALOR or "ETNIA" in str(col):
+                continue
+            try:
+                if pd.api.types.is_numeric_dtype(df[col]):
+                    col_valor = col
+                    break
+                elif df[col].dropna().apply(
+                    lambda x: str(x).replace(".", "").replace(",", "").strip().isdigit()
+                ).any():
+                    col_valor = col
+                    break
+            except Exception:
+                continue
 
-        texto = (
-            f"{periodo.capitalize()}, en el municipio de {municipio} (Boyacá), "
-            f"se registraron {valor:,.0f} casos/personas para el indicador: "
-            f"'{nombre_indicador}'. "
-            f"Fuente: {fuente}."
+        if not col_valor:
+            print(f"  Omitida (sin columna numérica): {sheet}")
+            continue
+
+        nombre_indicador = col_valor.replace("\n", " ").strip()
+
+        col_municipio = next(
+            (c for c in ["MUNICIPIO", "MUNICIPIO RESIDENCIA", "MUNICIPIO RESIDENCIA "]
+             if c in df.columns), None
         )
-        chunks_totales.append({
-            "texto":      texto,
-            "anio":       anio,
-            "municipio":  municipio,
-            "indicador":  nombre_indicador,
-            "valor":      valor,
-            "fuente":     fuente,
-        })
+        col_anio   = next((c for c in ["AÑO", "ANIO"] if c in df.columns), None)
+        col_mes    = "MES" if "MES" in df.columns else None
+        col_fuente = "FUENTE DE LA INFORMACION" if "FUENTE DE LA INFORMACION" in df.columns else None
 
-    print(f"  ✓ {sheet[:50]:<52} → {len(df)} filas")
+        filas_ok = 0
+        for _, row in df.iterrows():
+            try:
+                valor = float(str(row[col_valor]).replace(",", ".").strip())
+            except (ValueError, KeyError, TypeError):
+                continue
+
+            municipio = str(row[col_municipio]).strip().title() if col_municipio and pd.notna(row.get(col_municipio)) else "Boyacá"
+            anio      = int(row[col_anio]) if col_anio and pd.notna(row.get(col_anio)) else 2025
+            mes       = str(row[col_mes]).strip().capitalize() if col_mes and pd.notna(row.get(col_mes)) else ""
+            fuente    = str(row[col_fuente]).strip() if col_fuente and pd.notna(row.get(col_fuente)) else FUENTE_DEF
+            periodo   = f"en {mes} de {anio}" if mes and mes.lower() not in ("nan", "") else f"en {anio}"
+
+            texto = (
+                f"{periodo.capitalize()}, en el municipio de {municipio} (Boyacá), "
+                f"se registraron {valor:,.0f} casos/personas para el indicador: "
+                f"'{nombre_indicador}'. "
+                f"Fuente: {fuente}."
+            )
+            chunks.append({
+                "texto":     texto,
+                "anio":      anio,
+                "municipio": municipio,
+                "indicador": nombre_indicador,
+                "valor":     valor,
+                "fuente":    fuente,
+            })
+            filas_ok += 1
+
+        print(f"  ✓ {sheet[:50]:<52} → {filas_ok} registros")
+
+    return chunks
+
+for archivo in ARCHIVOS:
+    chunks_totales.extend(procesar_sheets(archivo))
 
 print(f"\nTotal chunks a insertar: {len(chunks_totales)}")
 
 # ══════════════════════════════════════════════════════════════════════════════
-# PARTE 3 — Generar embeddings
+# Generar embeddings
 # ══════════════════════════════════════════════════════════════════════════════
 print("\nGenerando embeddings...")
 textos     = [c["texto"] for c in chunks_totales]
 embeddings = model.encode(textos, batch_size=32, show_progress_bar=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# PARTE 4 — Insertar en Supabase
+# Insertar en Supabase
 # ══════════════════════════════════════════════════════════════════════════════
 print("\nConectando a Supabase...")
 conn = psycopg2.connect(DB_URL)
@@ -187,10 +192,10 @@ registros = [
         DIMENSION,
         c["texto"],
         c["anio"],
-        "Boyacá",           # departamento
-        c["indicador"],     # actividad
-        "Salud",            # sector
-        "Indicador salud",  # tipo_precio
+        "Boyacá",
+        c["indicador"],
+        "Salud",
+        "Indicador salud",
         c["valor"],
         c["fuente"],
         embeddings[i].tolist(),
@@ -220,3 +225,5 @@ cur.close()
 conn.close()
 
 print(f"\n✅ Ingesta completada: {total} registros de salud cargados en Supabase.")
+print("\nVerifica con:")
+print("  SELECT dimension, COUNT(*) FROM indicadores GROUP BY dimension;")
