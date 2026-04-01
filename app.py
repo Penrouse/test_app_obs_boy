@@ -39,7 +39,7 @@ with st.sidebar:
     st.markdown("### ⚙️ Configuración")
     dimension = st.selectbox(
         "Dimensión",
-        options="Todas","Económica","Salud","Violencia",
+        options=["Todas","Económica","Salud","Violencia"],
         help="Filtra la búsqueda por dimensión del observatorio"
     )
     mostrar_fuentes = st.toggle("Mostrar fuentes", value=True)
