@@ -1,5 +1,8 @@
+import os
+import base64
 import streamlit as st
 from rag_motor import responder
+
 
 st.set_page_config(
     page_title="Red de Observatorios – Boyacá",
@@ -84,7 +87,10 @@ if "dimension" not in st.session_state: st.session_state.dimension = "Todas"
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.image("img/gobboy.png", use_container_width=True) if __import__("os").path.exists("img/gobboy.png") else st.title("🏛️ Observatorio Boyacá")
+    if os.path.exists("img/gobboy.png"):
+        st.image("img/gobboy.png", use_container_width=True)
+    else:
+        st.title("🏛️ Observatorio Boyacá")
 
     st.markdown("---")
     st.markdown("### ⚙️ Dimensión")
