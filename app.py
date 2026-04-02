@@ -32,8 +32,11 @@ DIM = {
 st.markdown("""
 <style>
 .block-container{padding-top:0!important;max-width:100%!important;}
-#MainMenu,footer,header{visibility:hidden;}
+#MainMenu{visibility:hidden;}
+footer{visibility:hidden;}
 .stDeployButton{display:none;}
+header[data-testid="stHeader"]{background:transparent!important;}
+header[data-testid="stHeader"] > div:first-child{visibility:hidden;}
 
 .obs-header{
   background:#0D1B2A;
