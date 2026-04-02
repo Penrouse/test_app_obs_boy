@@ -1,5 +1,6 @@
 import base64, os
 import streamlit as st
+import streamlit.components.v1 as components
 from rag_motor import responder
 
 st.set_page_config(
@@ -35,11 +36,8 @@ st.markdown("""
 #MainMenu{visibility:hidden;}
 footer{visibility:hidden;}
 .stDeployButton{display:none;}
-header[data-testid="stHeader"]{background:transparent!important;border:none!important;}
 [data-testid="stToolbar"]{display:none!important;}
-[data-testid="stStatusWidget"]{display:none!important;}
 [data-testid="stDecoration"]{display:none!important;}
-[data-testid="collapsedControl"]{display:flex!important;visibility:visible!important;opacity:1!important;}
 
 .obs-header{
   background:#0D1B2A;
