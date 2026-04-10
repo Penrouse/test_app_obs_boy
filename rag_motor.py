@@ -1,19 +1,19 @@
 import os
 import psycopg2
-import anthropic
+from openai import OpenAI
 from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# ── Compatibilidad local (.env) y Streamlit Cloud (secrets) ──────────────────
+# ── Credenciales: local (.env) y Streamlit Cloud (secrets) ───────────────────
 try:
     import streamlit as st
-    DB_URL     = os.getenv("SUPABASE_DB_URL") or st.secrets.get("SUPABASE_DB_URL")
-    CLAUDE_KEY = os.getenv("ANTHROPIC_API_KEY") or st.secrets.get("ANTHROPIC_API_KEY")
+    DB_URL     = os.getenv("SUPABASE_DB_URL")     or st.secrets.get("SUPABASE_DB_URL")
+    OPENAI_KEY = os.getenv("OPENAI_API_KEY")       or st.secrets.get("OPENAI_API_KEY")
 except Exception:
     DB_URL     = os.getenv("SUPABASE_DB_URL")
-    CLAUDE_KEY = os.getenv("ANTHROPIC_API_KEY")
+    OPENAI_KEY = os.getenv("OPENAI_API_KEY")
 
 # ── Singletons ────────────────────────────────────────────────────────────────
 _model  = None
@@ -28,7 +28,7 @@ def get_model():
 def get_client():
     global _client
     if _client is None:
-        _client = anthropic.Anthropic(api_key=CLAUDE_KEY)
+        _client = OpenAI(api_key=OPENAI_KEY)
     return _client
 
 
@@ -95,7 +95,7 @@ REGLAS:
 - Nunca menciones que "no tienes acceso" ni hables en primera persona como sistema técnico.
 - Habla como un asistente informativo dirigido al ciudadano: claro, directo y en español.
 - Siempre menciona el año, el municipio y la fuente al citar un dato.
-- Si hay datos parciales, preséntales y aclara que corresponden a los registros disponibles.
+- Si hay datos parciales, preséntalos y aclara que corresponden a los registros disponibles.
 - Si preguntan por un indicador que no está en el contexto, responde:
   "En este momento no se cuenta con información disponible sobre ese indicador en el observatorio."
 
@@ -204,15 +204,15 @@ def responder(pregunta: str, dimension: str = None) -> dict:
             "fuentes":   [],
         }
 
-    prompt  = construir_prompt(pregunta, chunks)
-    mensaje = get_client().messages.create(
-        model      = "claude-haiku-4-5",
+    prompt   = construir_prompt(pregunta, chunks)
+    respuesta = get_client().chat.completions.create(
+        model      = "gpt-4o-mini",
         max_tokens = 1024,
         messages   = [{"role": "user", "content": prompt}],
     )
 
     return {
-        "respuesta": mensaje.content[0].text,
+        "respuesta": respuesta.choices[0].message.content,
         "fuentes":   chunks,
     }
 
@@ -221,7 +221,7 @@ def responder(pregunta: str, dimension: str = None) -> dict:
 if __name__ == "__main__":
     preguntas = [
         "¿Qué información tienes disponible?",
-        "¿Cuál fue el PIB de Boyacá en 2023 y cuánto creció respecto a 2022?",
+        "¿Cuál fue el PIB de Boyacá en 2023?",
         "¿Cuántos feminicidios se registraron en Boyacá en 2025?",
     ]
     for p in preguntas:
